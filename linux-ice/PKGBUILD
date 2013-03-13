@@ -1,10 +1,9 @@
-# $Id$
 # Maintainer: Cian Mc Govern <cian@cianmcgovern.com>
 # Maintainer: Tobias Powalowski <tpowa@archlinux.org>
 # Maintainer: Thomas Baechler <thomas@archlinux.org>
 
-#pkgbase=linux               # Build stock -ARCH kernel
-pkgbase=linux-ice       # Build kernel with a different name
+#pkgname=linux-ice       # Build kernel with a different name
+pkgname=linux-ice
 _srcname=linux-3.8
 pkgver=3.8.2
 pkgrel=1
@@ -29,7 +28,8 @@ md5sums=('1c738edfc54e7c65faeb90c436104e2f'
          '79a3f2825344fdd2a0ac802caf2d0ed7'
          'c4619ee3dd2597ca2ca4b5306c78c46f')
 
-_kernelname=${pkgbase#linux}
+_kernelname=${pkgname#linux}
+provides=(linux-ice-headers linux-ice-docs)
 
 build() {
   cd "${srcdir}/${_srcname}"
@@ -96,15 +96,21 @@ build() {
   make ${MAKEFLAGS} LOCALVERSION= bzImage modules
 }
 
+package() {
+  _package
+  _package-docs
+  _package-headers
+}
+
 _package() {
-  pkgdesc="The ${pkgbase} kernel and modules"
-  [ "${pkgbase}" = "linux" ] && groups=('base')
+  pkgdesc="The ${pkgname} kernel and modules"
+  [ "${pkgname}" = "linux" ] && groups=('base')
   depends=('coreutils' 'linux-firmware' 'kmod' 'mkinitcpio>=0.7')
   optdepends=('crda: to set the correct wireless channels of your country')
   provides=("kernel26${_kernelname}=${pkgver}")
   conflicts=("kernel26${_kernelname}")
   replaces=("kernel26${_kernelname}")
-  backup=("etc/mkinitcpio.d/${pkgbase}.preset")
+  backup=("etc/mkinitcpio.d/${pkgname}.preset")
   install=linux-ice.install
 
   cd "${srcdir}/${_srcname}"
@@ -118,13 +124,13 @@ _package() {
 
   mkdir -p "${pkgdir}"/{lib/modules,lib/firmware,boot}
   make LOCALVERSION= INSTALL_MOD_PATH="${pkgdir}" modules_install
-  cp arch/$KARCH/boot/bzImage "${pkgdir}/boot/vmlinuz-${pkgbase}"
+  cp arch/$KARCH/boot/bzImage "${pkgdir}/boot/vmlinuz-${pkgname}"
 
   # add vmlinux
   install -D -m644 vmlinux "${pkgdir}/usr/src/linux-${_kernver}/vmlinux"
 
   # install fallback mkinitcpio.conf file and preset file for kernel
-  install -D -m644 "${srcdir}/linux-ice.preset" "${pkgdir}/etc/mkinitcpio.d/${pkgbase}.preset"
+  install -D -m644 "${srcdir}/linux-ice.preset" "${pkgdir}/etc/mkinitcpio.d/${pkgname}.preset"
 
   # set correct depmod command for install
   sed \
@@ -132,11 +138,11 @@ _package() {
     -e  "s/KERNEL_VERSION=.*/KERNEL_VERSION=${_kernver}/" \
     -i "${startdir}/linux-ice.install"
   sed \
-    -e "1s|'linux.*'|'${pkgbase}'|" \
-    -e "s|ALL_kver=.*|ALL_kver=\"/boot/vmlinuz-${pkgbase}\"|" \
-    -e "s|default_image=.*|default_image=\"/boot/initramfs-${pkgbase}.img\"|" \
-    -e "s|fallback_image=.*|fallback_image=\"/boot/initramfs-${pkgbase}-fallback.img\"|" \
-    -i "${pkgdir}/etc/mkinitcpio.d/${pkgbase}.preset"
+    -e "1s|'linux.*'|'${pkgname}'|" \
+    -e "s|ALL_kver=.*|ALL_kver=\"/boot/vmlinuz-${pkgname}\"|" \
+    -e "s|default_image=.*|default_image=\"/boot/initramfs-${pkgname}.img\"|" \
+    -e "s|fallback_image=.*|fallback_image=\"/boot/initramfs-${pkgname}-fallback.img\"|" \
+    -i "${pkgdir}/etc/mkinitcpio.d/${pkgname}.preset"
 
   # remove build and source links
   rm -f "${pkgdir}"/lib/modules/${_kernver}/{source,build}
@@ -158,7 +164,7 @@ _package() {
 }
 
 _package-headers() {
-  pkgdesc="Header files and scripts for building modules for ${pkgbase} kernel"
+  pkgdesc="Header files and scripts for building modules for ${pkgname} kernel"
   provides=("kernel26${_kernelname}-headers=${pkgver}")
   conflicts=("kernel26${_kernelname}-headers")
   replaces=("kernel26${_kernelname}-headers")
@@ -298,7 +304,7 @@ _package-headers() {
 }
 
 _package-docs() {
-  pkgdesc="Kernel hackers manual - HTML documentation that comes with the ${pkgbase} kernel"
+  pkgdesc="Kernel hackers manual - HTML documentation that comes with the ${pkgname} kernel"
   provides=("kernel26${_kernelname}-docs=${pkgver}")
   conflicts=("kernel26${_kernelname}-docs")
   replaces=("kernel26${_kernelname}-docs")
@@ -314,11 +320,11 @@ _package-docs() {
   rm -f "${pkgdir}/usr/src/linux-${_kernver}/Documentation/DocBook/Makefile"
 }
 
-pkgname=("${pkgbase}" "${pkgbase}-headers" "${pkgbase}-docs")
-for _p in ${pkgname[@]}; do
-  eval "package_${_p}() {
-    _package${_p#${pkgbase}}
-  }"
-done
+#pkgname=("${pkgname}" "${pkgname}-headers" "${pkgname}-docs")
+#for _p in ${pkgname[@]}; do
+#  eval "package_${_p}() {
+#    _package${_p#${pkgname}}
+#  }"
+#done
 
 # vim:set ts=8 sts=2 sw=2 et:
