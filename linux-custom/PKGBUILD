@@ -43,8 +43,8 @@ pkgname=linux-custom
 true && pkgname=(linux-custom linux-custom-headers)
 _kernelname=-custom
 _srcname=linux-3.9
-pkgver=3.9.2
-pkgrel=2
+pkgver=3.9.3
+pkgrel=1
 arch=('i686' 'x86_64')
 url="https://wiki.archlinux.org/index.php/linux-custom"
 license=('GPL2')
@@ -60,8 +60,8 @@ source=("http://www.kernel.org/pub/linux/kernel/v3.x/${_srcname}.tar.xz"
 'change-default-console-loglevel.patch'
 'config' 'config.x86_64')
 sha256sums=('60bc3e64ee5dc778de2cd7cd7640abf518a4c9d4f31b8ed624e16fad53f54541'
-            '069126b2b70acbc27fada2bf67235238fd90ff103267b1bb392244a301321996'
-            '913f8150a5e2fbd6e7800c8579f3dbcf25227c6f4fe6441563ba54bbe19e3c27'
+            '248ab5f9a42b72e5c3d961520a5fff609a625bbf570ad45d7ae97009525b94d7'
+            'cceef460a2b9e02a7b7d41680867f2ab12d17c3b7c8a04848da3497c52b1fc03'
             '7052476e47925bc67210e7ad52f61be21016ef9763843f492501f5e4f8c3d221'
             '1a09dd8a77b5f130b01ee9e95545699ebd25aaa4f32cec350c7c15bd42666414'
             '56bd99e54429a25a144f2d221718b67f516344ffd518fd7dcdd752206ec5be69'

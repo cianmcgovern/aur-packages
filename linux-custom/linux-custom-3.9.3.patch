@@ -1,6 +1,6 @@
-From 9277bceb0a64d1c209e69a74d98d433da5281103 Mon Sep 17 00:00:00 2001
+From 872353e9566c1a0b57384986316374b0465a1287 Mon Sep 17 00:00:00 2001
 From: Cian Mc Govern <cian@cianmcgovern.com>
-Date: Sat, 18 May 2013 21:10:26 +0100
+Date: Sun, 19 May 2013 20:35:26 +0100
 Subject: [PATCH 1/2] patch-3.9-ck1
 
 
@@ -416,7 +416,7 @@ index ccd4258..95b0cd4 100644
  
  The file rtsig-max can be used to tune the maximum number
 diff --git a/Makefile b/Makefile
-index 3e71511..2643b0f 100644
+index 01003d4..aad8ae2 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -10,6 +10,10 @@ NAME = Unicycling Gorilla
@@ -447,10 +447,10 @@ index 4931838..6146512 100644
   * tick for every 10 CPU scheduler ticks.
   */
 diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
-index 15b5cef..5d14e09 100644
+index 6ef2a37..5c4c243 100644
 --- a/arch/x86/Kconfig
 +++ b/arch/x86/Kconfig
-@@ -1153,7 +1153,7 @@ config HIGHMEM64G
+@@ -1152,7 +1152,7 @@ config HIGHMEM64G
  endchoice
  
  choice
@@ -459,7 +459,7 @@ index 15b5cef..5d14e09 100644
  	default VMSPLIT_3G
  	depends on X86_32
  	---help---
-@@ -1173,17 +1173,17 @@ choice
+@@ -1172,17 +1172,17 @@ choice
  	  option alone!
  
  	config VMSPLIT_3G
@@ -9272,10 +9272,10 @@ index 669fba3..6ef7f3c 100644
 1.8.2.3
 
 
-From 7e03b96aebafc27a58f3109ecd3d20c80e93104f Mon Sep 17 00:00:00 2001
+From 235c751786f85e67376c3c0c856ba3dc6a99b769 Mon Sep 17 00:00:00 2001
 From: Cian Mc Govern <cian@cianmcgovern.com>
-Date: Sat, 18 May 2013 21:11:48 +0100
-Subject: [PATCH 2/2] tuxonice-for-linux-3.9-2-2013-05-12
+Date: Mon, 20 May 2013 20:00:44 +0100
+Subject: [PATCH 2/2] tuxonice-for-linux-3.9-2-2013-05-12.patch
 
 
 diff --git a/Documentation/kernel-parameters.txt b/Documentation/kernel-parameters.txt
@@ -12307,10 +12307,10 @@ index bb24c09..78be40b 100644
  static char *static_command_line;
  
 diff --git a/ipc/shm.c b/ipc/shm.c
-index 34af1fe..70eac9c 100644
+index 7e199fa..a4ddca0 100644
 --- a/ipc/shm.c
 +++ b/ipc/shm.c
-@@ -509,7 +509,7 @@ static int newseg(struct ipc_namespace *ns, struct ipc_params *params)
+@@ -515,7 +515,7 @@ static int newseg(struct ipc_namespace *ns, struct ipc_params *params)
  		if  ((shmflg & SHM_NORESERVE) &&
  				sysctl_overcommit_memory != OVERCOMMIT_NEVER)
  			acctflag = VM_NORESERVE;
@@ -12340,7 +12340,7 @@ index b5e4ab2..f9c94c3 100644
  static int __init alloc_frozen_cpus(void)
  {
 diff --git a/kernel/kmod.c b/kernel/kmod.c
-index 56dd349..5d3c529 100644
+index 8985c87..67da4ce 100644
 --- a/kernel/kmod.c
 +++ b/kernel/kmod.c
 @@ -450,6 +450,7 @@ void __usermodehelper_set_disable_depth(enum umh_disable_depth depth)
