@@ -1,6 +1,6 @@
-From 74679be7f8ea56c30f93a398a8303cac6c2b33ed Mon Sep 17 00:00:00 2001
+From 1f865684dfc77ced69ffe1d7038cf5fbee253672 Mon Sep 17 00:00:00 2001
 From: Cian Mc Govern <cian@cianmcgovern.com>
-Date: Fri, 24 May 2013 21:43:42 +0100
+Date: Fri, 14 Jun 2013 21:43:02 +0100
 Subject: [PATCH 1/2] patch-ck1
 
 
@@ -416,10 +416,10 @@ index ccd4258..95b0cd4 100644
  
  The file rtsig-max can be used to tune the maximum number
 diff --git a/Makefile b/Makefile
-index bfbfaf9..bb3a40e 100644
+index 4a40307..24acace 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -10,6 +10,10 @@ NAME = Unicycling Gorilla
+@@ -10,6 +10,10 @@ NAME = Black Squirrel Wakeup Call
  # Comments in this file are targeted only to the developer, do not
  # expect to learn how to build the kernel reading this file.
  
@@ -9269,13 +9269,13 @@ index 669fba3..6ef7f3c 100644
  	if (zone_watermark_ok_safe(zone, order, low_wmark_pages(zone), 0, 0))
  		return;
 -- 
-1.8.2.3
+1.8.3.1
 
 
-From e0b35c5d57c1c535cbde64d5f013c9c7129e624d Mon Sep 17 00:00:00 2001
+From 1fe452e768d81935b7e68a83293192ce83ca8ed4 Mon Sep 17 00:00:00 2001
 From: Cian Mc Govern <cian@cianmcgovern.com>
-Date: Fri, 24 May 2013 21:47:57 +0100
-Subject: [PATCH 2/2] tuxonice-for-linux-3.9-3-2013-05-21.patch
+Date: Fri, 14 Jun 2013 21:43:52 +0100
+Subject: [PATCH 2/2] tuxonice-for-linux-3.9-5-2013-06-08
 
 
 diff --git a/Documentation/kernel-parameters.txt b/Documentation/kernel-parameters.txt
@@ -11936,10 +11936,10 @@ index c7c840e..8c8e30c 100644
  
  		/* Update the master statfs file */
 diff --git a/fs/jfs/jfs_logmgr.c b/fs/jfs/jfs_logmgr.c
-index 2eb952c..ce8687e 100644
+index cbe48ea..379c119 100644
 --- a/fs/jfs/jfs_logmgr.c
 +++ b/fs/jfs/jfs_logmgr.c
-@@ -2337,6 +2337,8 @@ int jfsIOWait(void *arg)
+@@ -2338,6 +2338,8 @@ int jfsIOWait(void *arg)
  {
  	struct lbuf *bp;
  
@@ -31607,5 +31607,5 @@ index 6ef7f3c..3226e01 100644
  
  /* It's optimal to keep kswapds on the same CPUs as their memory, but
 -- 
-1.8.2.3
+1.8.3.1
 
