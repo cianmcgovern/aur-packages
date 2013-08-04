@@ -9,7 +9,7 @@
 # Set these variables to ANYTHING that is not null (y or hello or 2 or "I like icecream") to enable them
 #
 _makenconfig=y 	# Tweak kernel options prior to a build via nconfig
-_localmodcfg=		# Compile ONLY probed modules
+_localmodcfg=y		# Compile ONLY probed modules
 _use_current=y		# Use the current kernel's .config file
 
 ### DOCS
@@ -42,8 +42,8 @@ _use_current=y		# Use the current kernel's .config file
 pkgname=linux-custom
 true && pkgname=(linux-custom linux-custom-headers)
 _kernelname=-custom
-_srcname=linux-3.9
-pkgver=3.9.7
+_srcname=linux-3.10
+pkgver=3.10.5
 pkgrel=1
 arch=('i686' 'x86_64')
 url="https://wiki.archlinux.org/index.php/linux-custom"
@@ -51,22 +51,21 @@ license=('GPL2')
 makedepends=('kmod' 'inetutils' 'bc')
 options=('!strip')
 _ckpatchversion=1
-_gcc_patch="kernel-39-gcc48-1.patch"
+_gcc_patch="kernel-310-gcc48-1.patch"
 source=("http://www.kernel.org/pub/linux/kernel/v3.x/${_srcname}.tar.xz"
 "http://www.kernel.org/pub/linux/kernel/v3.x/patch-${pkgver}.xz"
-"linux-custom-${pkgver}.patch"
+"linux-${pkgver}-custom.patch"
 "http://repo-ck.com/source/gcc_patch/${_gcc_patch}.gz"
 'linux-custom.preset'
 'change-default-console-loglevel.patch'
-'config' 'config.x86_64')
-sha256sums=('60bc3e64ee5dc778de2cd7cd7640abf518a4c9d4f31b8ed624e16fad53f54541'
-            '23db9de5ffa2f8f36d61da85ee46656a3373f8868415c1f3c77c51c41fabfda8'
-            '453c425ac901c5a4d166188bd4390a6ca1aa50d688617a4bdeabb48a68be7f8f'
-            '7052476e47925bc67210e7ad52f61be21016ef9763843f492501f5e4f8c3d221'
+'config.x86_64')
+sha256sums=('df27fa92d27a9c410bfe6c4a89f141638500d7eadcca5cce578954efc2ad3544'
+            'c96b69a10ef5ade798dcaa1867df156ccc9e173225d5aa427d00c6e89246e035'
+            '22d3dab146ce1290a7ac13b8dcbc46d67fead0802169cce8fecf3de16018e2c6'
+            '16c9eab6e83f0f4f035d8f52e17791115d8c01c6199a21525cb2f583aec61b03'
             '1a09dd8a77b5f130b01ee9e95545699ebd25aaa4f32cec350c7c15bd42666414'
             '56bd99e54429a25a144f2d221718b67f516344ffd518fd7dcdd752206ec5be69'
-            '9f48be63af6b0d7f10a1d7a416a237c70a11cfbadf28d376a23338da0cec1253'
-            '57f5653f9c213429c79d186a043ff2702e884d7179afb2104a53cf3f906d382f')
+            'e4a112f3f522503768d1a69e1c583991d23615fe414f17ce3fbb9dc5dbe03b45')
 
 prepare() {
 	cd "${_srcname}"
@@ -86,17 +85,13 @@ prepare() {
 
     # Patch with linux-custom patch
     msg "Patching source with linux-custom patch"
-    patch -Np1 -i "${srcdir}/linux-custom-${pkgver}.patch"
+    patch -Np1 -i "${srcdir}/linux-${pkgver}-custom.patch"
 
 	### Clean tree and copy ARCH config over
 	msg "Running make mrproper to clean source tree"
 	make mrproper
 
-	if [ "${CARCH}" = "x86_64" ]; then
-		cat "${srcdir}/config.x86_64" > ./.config
-	else
-		cat "${srcdir}/config" > ./.config
-	fi
+	cat "${srcdir}/config.x86_64" > ./.config
 
 	### Optionally use running kernel's config
 	# code originally by nous; http://aur.archlinux.org/packages.php?ID=40191
