@@ -1,159 +1,127 @@
-# Originally taken from the linux-ck package by graysky
+# $Id$
+# Maintainer: Tobias Powalowski <tpowa@archlinux.org>
+# Maintainer: Thomas Baechler <thomas@archlinux.org>
 
-# Contributor: Cian Mc Govern <cian@cianmcgovern.com>
-# Contributor: graysky <graysky AT archlinux DOT us>
-# Contributor: Tobias Powalowski <tpowa@archlinux.org>
-# Contributor: Thomas Baechler <thomas@archlinux.org>
-
-### PATCH AND BUILD OPTIONS
-# Set these variables to ANYTHING that is not null (y or hello or 2 or "I like icecream") to enable them
-#
-_makenconfig=y 	# Tweak kernel options prior to a build via nconfig
-_localmodcfg=y		# Compile ONLY probed modules
-_use_current=y		# Use the current kernel's .config file
-
-### DOCS
-# Starting with the 3.6.9-3 release, this package ships with the kernel-3x-gcc47-x.patch.
-# This allows users an expanded scope of CPU specific options.
-# Consult the following resources to understand which option is right for you application:
-#
-# http://en.gentoo-wiki.com/wiki/Safe_Cflags/Intel
-# http://en.gentoo-wiki.com/wiki/Safe_Cflags/AMD
-# http://www.linuxforge.net/docs/linux/linux-gcc.php 
-# http://gcc.gnu.org/onlinedocs/gcc/i386-and-x86_002d64-Options.html
-
-# DETAILS FOR _localmodcfg=
-# As of mainline 2.6.32, running with this option will only build the modules that you currently have
-# probed in your system VASTLY reducing the number of modules built and the build time to do it.
-#
-# WARNING - make CERTAIN that all modules are modprobed BEFORE you begin making the pkg!
-#
-# To keep track of which modules are needed for your specific system/hardware, give my module_db script
-# a try: http://aur.archlinux.org/packages.php?ID=41689  Note that if you use my script, this PKGBUILD 
-# will auto run the 'sudo modprobed_db reload' for you to probe all the modules you have logged!
-#
-# More at this wiki page ---> https://wiki.archlinux.org/index.php/Modprobed_db
-
-# DETAILS FOR _use_current=
-# Enabling this option will use the .config of the RUNNING kernel rather than the ARCH defaults.
-# Useful when the package gets updated and you already went through the trouble of customizing your
-# config options.  NOT recommended when a new kernel is released, but again, convenient for package bumps.
-
-pkgname=linux-custom
-true && pkgname=(linux-custom linux-custom-headers)
-_kernelname=-custom
-_srcname=linux-3.10
-pkgver=3.10.5
+#pkgbase=linux               # Build stock -ARCH kernel
+pkgbase=linux-custom       # Build kernel with a different name
+_srcname=linux-3.11-rc7
+pkgver=3.11rc7
+_pkgver=3.11-rc7
 pkgrel=1
 arch=('i686' 'x86_64')
-url="https://wiki.archlinux.org/index.php/linux-custom"
+url="http://www.kernel.org/"
 license=('GPL2')
-makedepends=('kmod' 'inetutils' 'bc')
+makedepends=('xmlto' 'docbook-xsl' 'kmod' 'inetutils' 'bc')
 options=('!strip')
-_ckpatchversion=1
-_gcc_patch="kernel-310-gcc48-1.patch"
-source=("http://www.kernel.org/pub/linux/kernel/v3.x/${_srcname}.tar.xz"
-"http://www.kernel.org/pub/linux/kernel/v3.x/patch-${pkgver}.xz"
-"linux-${pkgver}-custom.patch"
-"http://repo-ck.com/source/gcc_patch/${_gcc_patch}.gz"
-'linux-custom.preset'
-'change-default-console-loglevel.patch'
-'config.x86_64')
-sha256sums=('df27fa92d27a9c410bfe6c4a89f141638500d7eadcca5cce578954efc2ad3544'
-            'c96b69a10ef5ade798dcaa1867df156ccc9e173225d5aa427d00c6e89246e035'
-            '22d3dab146ce1290a7ac13b8dcbc46d67fead0802169cce8fecf3de16018e2c6'
-            '16c9eab6e83f0f4f035d8f52e17791115d8c01c6199a21525cb2f583aec61b03'
-            '1a09dd8a77b5f130b01ee9e95545699ebd25aaa4f32cec350c7c15bd42666414'
-            '56bd99e54429a25a144f2d221718b67f516344ffd518fd7dcdd752206ec5be69'
-            'e4a112f3f522503768d1a69e1c583991d23615fe414f17ce3fbb9dc5dbe03b45')
+source=("http://www.kernel.org/pub/linux/kernel/v3.x/testing/${_srcname}.tar.xz"
+        # the main kernel config files
+        'config' 'config.x86_64'
+        # laptop config
+        'config-laptop-3.11'
+        # standard config files for mkinitcpio ramdisk
+        'linux.preset'
+        'change-default-console-loglevel.patch'
+        'criu-no-expert.patch'
+        "linux-${_pkgver}-custom.patch")
+md5sums=('c98bfc6a4b2b5f274df0d9dc0dd2fc3a'
+         '007582f36e5386f66460dcd075e2c04c'
+         'aa6a56c9cb67004ce47831e1e0f43ce6'
+         '4601a3e4700fd5ef5828b98658f396e4'
+         'eb14dcfd80c00852ef81ded6e826826a'
+         'ca3e3adbc8ea22ee57d9a82e07b7d035'
+         'd50c1ac47394e9aec637002ef3392bd1'
+         'f5bb8a6d85b1453ba7c78db634698860')
+
+_kernelname=${pkgbase#linux}
+
+_localmodcfg=
+_use_current=
+
+# module.symbols md5sums
+# x86_64
+# 8eff46fa6e5604112ea3d0d0848c0005  /lib/modules/3.10.8-1-ARCH/modules.symbols
+# i686
+# bba2399c1ae0183280c52dffe95f77a2  /lib/modules/3.10.8-1-ARCH/modules.symbols
 
 prepare() {
-	cd "${_srcname}"
+  cd "${srcdir}/${_srcname}"
 
-	# add upstream patch
-	msg "Patching source upstream patch set to $pkgver"
-	patch -p1 -i "${srcdir}/patch-${pkgver}"
+  # add latest fixes from stable queue, if needed
+  # http://git.kernel.org/?p=linux/kernel/git/stable/stable-queue.git
 
-	# set DEFAULT_CONSOLE_LOGLEVEL to 4 (same value as the 'quiet' kernel param)
-	# remove this when a Kconfig knob is made available by upstream
-	# (relevant patch sent upstream: https://lkml.org/lkml/2011/7/26/227)
-	patch -Np1 -i "${srcdir}/change-default-console-loglevel.patch"
+  # set DEFAULT_CONSOLE_LOGLEVEL to 4 (same value as the 'quiet' kernel param)
+  # remove this when a Kconfig knob is made available by upstream
+  # (relevant patch sent upstream: https://lkml.org/lkml/2011/7/26/227)
 
-	### Patch source to enable more gcc CPU optimizatons via the make nconfig
-    msg "Patching source with gcc CPU optimizations"
-	patch -Np1 -i "${srcdir}/${_gcc_patch}"
+  # allow criu without expert option set
+  # patch from fedora
+  patch -Np1 -i "${srcdir}/criu-no-expert.patch"
 
-    # Patch with linux-custom patch
-    msg "Patching source with linux-custom patch"
-    patch -Np1 -i "${srcdir}/linux-${pkgver}-custom.patch"
+  patch -Np1 -i "${srcdir}/${_srcname}-custom.patch"
 
-	### Clean tree and copy ARCH config over
-	msg "Running make mrproper to clean source tree"
-	make mrproper
+  if [ -n "$_use_current" ]; then
+    if [[ -s /proc/config.gz ]]; then
+        msg "Extracting config from /proc/config.gz..."
+        # modprobe configs
+        zcat /proc/config.gz > ./.config
+    else
+        warning "You kernel was not compiled with IKCONFIG_PROC!"
+        warning "You cannot read the current config!"                                  warning "Aborting!"
+        exit
+    fi
+  fi
 
-	cat "${srcdir}/config.x86_64" > ./.config
+  if [ "${CARCH}" = "x86_64" ]; then
+    cat "${srcdir}/config.x86_64" > ./.config
+  else
+    cat "${srcdir}/config" > ./.config
+  fi
 
-	### Optionally use running kernel's config
-	# code originally by nous; http://aur.archlinux.org/packages.php?ID=40191
-	if [ -n "$_use_current" ]; then
-		if [[ -s /proc/config.gz ]]; then
-			msg "Extracting config from /proc/config.gz..."
-			# modprobe configs
-			zcat /proc/config.gz > ./.config
-		else
-			warning "You kernel was not compiled with IKCONFIG_PROC!"
-			warning "You cannot read the current config!"
-			warning "Aborting!"
-			exit
-		fi
-	fi
+  if [ "${_kernelname}" != "" ]; then
+    sed -i "s|CONFIG_LOCALVERSION=.*|CONFIG_LOCALVERSION=\"${_kernelname}\"|g" ./.config
+    sed -i "s|CONFIG_LOCALVERSION_AUTO=.*|CONFIG_LOCALVERSION_AUTO=n|" ./.config
+  fi
 
-	if [ "${_kernelname}" != "" ]; then
-		sed -i "s|CONFIG_LOCALVERSION=.*|CONFIG_LOCALVERSION=\"${_kernelname}\"|g" ./.config
-		sed -i "s|CONFIG_LOCALVERSION_AUTO=.*|CONFIG_LOCALVERSION_AUTO=n|" ./.config
-	fi
+  # set extraversion to pkgrel
+  sed -ri "s|^(EXTRAVERSION =).*|\1 -${pkgrel}|" Makefile
 
-	### Running with 300 Hz ticks has been shown to be problematic on several laptop and desktop systems
-	### patched with BFS v0.430.  Symptoms include freezing on a reboot or shutdown.  The following lines
-	### bump up the tick rate from 300 to 1000 Hz which obviates these freezes.
-	###
-	### If you wish the lower tick rate, you will need to edit it via the nconfig and know that the freeze
-	### issue may haunt you.
-
-	sed -i -e 's/CONFIG_HZ_300=y/# CONFIG_HZ_300 is not set/' \
-		-i -e 's/# CONFIG_HZ_1000 is not set/CONFIG_HZ_1000=y/' \
-		-i -e 's/CONFIG_HZ=300/CONFIG_HZ=1000/' ./.config
-
-	# set extraversion to pkgrel
-	sed -ri "s|^(EXTRAVERSION =).*|\1 -${pkgrel}|" Makefile
-
-	# don't run depmod on 'make install'. We'll do this ourselves in packaging
-	sed -i '2iexit 0' scripts/depmod.sh
+  # don't run depmod on 'make install'. We'll do this ourselves in packaging
+  sed -i '2iexit 0' scripts/depmod.sh
 }
 
 build() {
-	cd "${_srcname}"
+  cd "${srcdir}/${_srcname}"
 
-	# get kernel version
-	msg "Running make prepare for you to enable patched options of your choosing"
-	make prepare
+  # get kernel version
+  make prepare
 
-	### Optionally load needed modules for the make localmodconfig
-	# See http://aur.archlinux.org/packages.php?ID=41689
-	if [ -n "$_localmodcfg" ]; then
-		msg "If you have modprobe_db installed, running it in recall mode now"
-		if [ -e /usr/bin/modprobed_db ]; then
-			[[ ! -x /usr/bin/sudo ]] && echo "Cannot call modprobe with sudo.  Install via pacman -S sudo and configure to work with this user." && exit 1
-			sudo /usr/bin/modprobed_db recall
-		fi
-		msg "Running Steven Rostedt's make localmodconfig now"
-		make localmodconfig
-	fi
+  ### Optionally load needed modules for the make localmodconfig
+  # See http://aur.archlinux.org/packages.php?ID=41689
+  if [ -n "$_localmodcfg" ]; then
+      msg "If you have modprobe_db installed, running it in recall mode now"
+      if [ -e /usr/bin/modprobed_db ]; then
+          [[ ! -x /usr/bin/sudo ]] && echo "Cannot call modprobe with sudo.  Install via pacman -S sudo and configure to work with this user." && exit 1
+          sudo /usr/bin/modprobed_db recall
+      fi
+      msg "Running Steven Rostedt's make localmodconfig now"
+      make localmodconfig
+  fi
 
-	if [ -n "$_makenconfig" ]; then
-		msg "Running make nconfig"
-		make nconfig
-	fi
+  if [[ `hostname` == "laptop" ]];
+  then
+    cat ${startdir}/config-laptop-3.11 > .config
+  fi
+
+  # load configuration
+  # Configure the kernel. Replace the line below with one of your choice.
+  #make menuconfig # CLI menu for configuration
+  make nconfig # new CLI menu for configuration
+  #make xconfig # X-based configuration
+  #make oldconfig # using old config from previous kernel version
+  # ... or manually edit .config
+
+  # rewrite configuration
+  yes "" | make config >/dev/null
 
   # save configuration for later reuse
   if [ "${CARCH}" = "x86_64" ]; then
@@ -162,214 +130,241 @@ build() {
     cat .config > "${startdir}/config.last"
   fi
 
-	msg "Running make bzImage and modules"
-	make ${MAKEFLAGS} LOCALVERSION= bzImage modules
+  ####################
+  # stop here
+  # this is useful to configure the kernel
+  #msg "Stopping build"; return 1
+  ####################
+
+  # build!
+  make ${MAKEFLAGS} LOCALVERSION= bzImage modules
 }
 
-package_linux-custom() {
-	_Kpkgdesc='Linux Kernel and modules with the ck1 patchset featuring the Brain Fuck Scheduler v0.430.'
-	pkgdesc="${_Kpkgdesc}"
-	depends=('coreutils' 'linux-firmware' 'mkinitcpio>=0.7')
-	optdepends=('crda: to set the correct wireless channels of your country' 'lirc-ck: Linux Infrared Remote Control kernel modules for linux-custom' 'nvidia-ck: nVidia drivers for linux-custom' 'nvidia-beta-ck: nVidia beta drivers for linux-custom' 'modprobed_db: Keeps track of EVERY kernel module that has ever been probed - useful for those of us who make localmodconfig')
-	provides=("linux-custom=${pkgver}")
-	conflicts=('kernel26-ck' 'linux-custom-corex' 'linux-custom-p4' 'linux-custom-pentm' 'linux-custom-atom' 'linux-custom-core2' 'linux-custom-nehalem' 'linux-custom-sandybridge' 'linux-custom-ivybridge' 'linux-custom-haswell' 'linux-custom-kx' 'linux-custom-k10' 'linux-custom-barcelona' 'linux-custom-bulldozer' 'linux-custom-piledriver')
-	replaces=('kernel26-ck')
-	backup=("etc/mkinitcpio.d/linux-custom.preset")
-	install=linux-custom.install
-	#groups=('ck-generic')
+_package() {
+  pkgdesc="The ${pkgbase/linux/Linux} kernel and modules"
+  [ "${pkgbase}" = "linux" ] && groups=('base')
+  depends=('coreutils' 'linux-firmware' 'kmod' 'mkinitcpio>=0.7')
+  optdepends=('crda: to set the correct wireless channels of your country')
+  provides=("kernel26${_kernelname}=${pkgver}")
+  conflicts=("kernel26${_kernelname}")
+  replaces=("kernel26${_kernelname}")
+  backup=("etc/mkinitcpio.d/${pkgbase}.preset")
+  install=linux.install
 
-	cd "${_srcname}"
+  cd "${srcdir}/${_srcname}"
 
-	KARCH=x86
+  KARCH=x86
 
-	# get kernel version
-	_kernver="$(make LOCALVERSION= kernelrelease)"
-	_basekernel=${_kernver%%-*}
-	_basekernel=${_basekernel%.*}
+  # get kernel version
+  _kernver="$(make LOCALVERSION= kernelrelease)"
+  _basekernel=${_kernver%%-*}
+  _basekernel=${_basekernel%.*}
 
-	mkdir -p "${pkgdir}"/{lib/modules,lib/firmware,boot}
-	make LOCALVERSION= INSTALL_MOD_PATH="${pkgdir}" modules_install
-	cp arch/$KARCH/boot/bzImage "${pkgdir}/boot/vmlinuz-linux-custom"
+  mkdir -p "${pkgdir}"/{lib/modules,lib/firmware,boot}
+  make LOCALVERSION= INSTALL_MOD_PATH="${pkgdir}" modules_install
+  cp arch/$KARCH/boot/bzImage "${pkgdir}/boot/vmlinuz-${pkgbase}"
 
-	# add vmlinux
-	install -D -m644 vmlinux "${pkgdir}/usr/src/linux-${_kernver}/vmlinux"
+  # add vmlinux
+  install -D -m644 vmlinux "${pkgdir}/usr/src/linux-${_kernver}/vmlinux"
 
-	# install fallback mkinitcpio.conf file and preset file for kernel
-	install -D -m644 "${srcdir}/linux-custom.preset" "${pkgdir}/etc/mkinitcpio.d/linux-custom.preset"
+  # set correct depmod command for install
+  cp -f "${startdir}/${install}" "${startdir}/${install}.pkg"
+  true && install=${install}.pkg
+  sed \
+    -e  "s/KERNEL_NAME=.*/KERNEL_NAME=${_kernelname}/" \
+    -e  "s/KERNEL_VERSION=.*/KERNEL_VERSION=${_kernver}/" \
+    -i "${startdir}/${install}"
 
-	# set correct depmod command for install
-	sed \
-		-e  "s/KERNEL_NAME=.*/KERNEL_NAME=-custom/g" \
-		-e  "s/KERNEL_VERSION=.*/KERNEL_VERSION=${_kernver}/g" \
-		-i "${startdir}/linux-custom.install"
-	sed \
-		-e "1s|'linux.*'|'linux-custom'|" \
-		-e "s|ALL_kver=.*|ALL_kver=\"/boot/vmlinuz-linux-custom\"|" \
-		-e "s|default_image=.*|default_image=\"/boot/initramfs-linux-custom.img\"|" \
-		-e "s|fallback_image=.*|fallback_image=\"/boot/initramfs-linux-custom-fallback.img\"|" \
-		-i "${pkgdir}/etc/mkinitcpio.d/linux-custom.preset"
+  # install mkinitcpio preset file for kernel
+  install -D -m644 "${srcdir}/linux.preset" "${pkgdir}/etc/mkinitcpio.d/${pkgbase}.preset"
+  sed \
+    -e "1s|'linux.*'|'${pkgbase}'|" \
+    -e "s|ALL_kver=.*|ALL_kver=\"/boot/vmlinuz-${pkgbase}\"|" \
+    -e "s|default_image=.*|default_image=\"/boot/initramfs-${pkgbase}.img\"|" \
+    -e "s|fallback_image=.*|fallback_image=\"/boot/initramfs-${pkgbase}-fallback.img\"|" \
+    -i "${pkgdir}/etc/mkinitcpio.d/${pkgbase}.preset"
 
-	# remove build and source links
-	rm -f "${pkgdir}"/lib/modules/${_kernver}/{source,build}
-	# remove the firmware
-	rm -rf "${pkgdir}/lib/firmware"
-	# gzip -9 all modules to save 100MB of space
-	find "${pkgdir}" -name '*.ko' -exec gzip -9 {} \;
-	# make room for external modules
-	ln -s "../extramodules-${_basekernel}${_kernelname:ck}" "${pkgdir}/lib/modules/${_kernver}/extramodules"
-	# add real version for building modules and running depmod from post_install/upgrade
-	mkdir -p "${pkgdir}/lib/modules/extramodules-${_basekernel}${_kernelname:ck}"
-	echo "${_kernver}" > "${pkgdir}/lib/modules/extramodules-${_basekernel}${_kernelname:ck}/version"
+  # remove build and source links
+  rm -f "${pkgdir}"/lib/modules/${_kernver}/{source,build}
+  # remove the firmware
+  rm -rf "${pkgdir}/lib/firmware"
+  # gzip -9 all modules to save 100MB of space
+  find "${pkgdir}" -name '*.ko' -exec gzip -9 {} \;
+  # make room for external modules
+  ln -s "../extramodules-${_basekernel}${_kernelname:--ARCH}" "${pkgdir}/lib/modules/${_kernver}/extramodules"
+  # add real version for building modules and running depmod from post_install/upgrade
+  mkdir -p "${pkgdir}/lib/modules/extramodules-${_basekernel}${_kernelname:--ARCH}"
+  echo "${_kernver}" > "${pkgdir}/lib/modules/extramodules-${_basekernel}${_kernelname:--ARCH}/version"
 
-	# Now we call depmod...
-	depmod -b "$pkgdir" -F System.map "$_kernver"
+  # Now we call depmod...
+  depmod -b "$pkgdir" -F System.map "$_kernver"
 
-	# move module tree /lib -> /usr/lib
-	mv "$pkgdir/lib" "$pkgdir/usr"
+  # move module tree /lib -> /usr/lib
+  mv "$pkgdir/lib" "$pkgdir/usr"
 }
 
-package_linux-custom-headers() {
-	_Hpkgdesc='Header files and scripts to build modules for linux-custom.'
-	pkgdesc="${_Hpkgdesc}"
-	depends=('linux-custom') # added to keep kernel and headers packages matched
-	provides=("linux-custom-headers=${pkgver}" "linux-headers=${pkgver}")
-	conflicts=('kernel26-ck-headers' 'linux-custom-corex-headers' 'linux-custom-p4-headers' 'linux-custom-pentm-headers' 'linux-custom-atom-headers' 'linux-custom-core2-headers' 'linux-custom-nehalem-headers' 'linux-custom-sandybridge-headers' 'linux-custom-ivybridge-headers' 'linux-custom-haswell-headers' 'linux-custom-kx-headers' 'linux-custom-k10-headers' 'linux-custom-barcelona-headers' 'linux-custom-bulldozer-headers' 'linux-custom-piledriver-headers')
-	replaces=('kernel26-ck-headers')
-	#groups=('ck-generic')
+_package-headers() {
+  pkgdesc="Header files and scripts for building modules for ${pkgbase/linux/Linux} kernel"
+  provides=("kernel26${_kernelname}-headers=${pkgver}")
+  conflicts=("kernel26${_kernelname}-headers")
+  replaces=("kernel26${_kernelname}-headers")
 
-	install -dm755 "${pkgdir}/usr/lib/modules/${_kernver}"
+  install -dm755 "${pkgdir}/usr/lib/modules/${_kernver}"
 
-	cd "${pkgdir}/usr/lib/modules/${_kernver}"
-	ln -sf ../../../src/linux-${_kernver} build
+  cd "${pkgdir}/usr/lib/modules/${_kernver}"
+  ln -sf ../../../src/linux-${_kernver} build
 
-	cd "${srcdir}/${_srcname}"
-	install -D -m644 Makefile \
-		"${pkgdir}/usr/src/linux-${_kernver}/Makefile"
-	install -D -m644 kernel/Makefile \
-		"${pkgdir}/usr/src/linux-${_kernver}/kernel/Makefile"
-	install -D -m644 .config \
-		"${pkgdir}/usr/src/linux-${_kernver}/.config"
+  cd "${srcdir}/${_srcname}"
+  install -D -m644 Makefile \
+    "${pkgdir}/usr/src/linux-${_kernver}/Makefile"
+  install -D -m644 kernel/Makefile \
+    "${pkgdir}/usr/src/linux-${_kernver}/kernel/Makefile"
+  install -D -m644 .config \
+    "${pkgdir}/usr/src/linux-${_kernver}/.config"
 
-	mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/include"
+  mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/include"
 
-	for i in acpi asm-generic config crypto drm generated keys linux math-emu \
-		media net pcmcia scsi sound trace uapi video xen; do
-		cp -a include/${i} "${pkgdir}/usr/src/linux-${_kernver}/include/"
-	done
+  for i in acpi asm-generic config crypto drm generated keys linux math-emu \
+    media net pcmcia scsi sound trace uapi video xen; do
+    cp -a include/${i} "${pkgdir}/usr/src/linux-${_kernver}/include/"
+  done
 
-	# copy arch includes for external modules
-	mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/arch/x86"
-	cp -a arch/x86/include "${pkgdir}/usr/src/linux-${_kernver}/arch/x86/"
+  # copy arch includes for external modules
+  mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/arch/x86"
+  cp -a arch/x86/include "${pkgdir}/usr/src/linux-${_kernver}/arch/x86/"
 
-	# copy files necessary for later builds, like nvidia and vmware
-	cp Module.symvers "${pkgdir}/usr/src/linux-${_kernver}"
-	cp -a scripts "${pkgdir}/usr/src/linux-${_kernver}"
+  # copy files necessary for later builds, like nvidia and vmware
+  cp Module.symvers "${pkgdir}/usr/src/linux-${_kernver}"
+  cp -a scripts "${pkgdir}/usr/src/linux-${_kernver}"
 
-	# fix permissions on scripts dir
-	chmod og-w -R "${pkgdir}/usr/src/linux-${_kernver}/scripts"
-	mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/.tmp_versions"
+  # fix permissions on scripts dir
+  chmod og-w -R "${pkgdir}/usr/src/linux-${_kernver}/scripts"
+  mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/.tmp_versions"
 
-	mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/arch/${KARCH}/kernel"
+  mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/arch/${KARCH}/kernel"
 
-	cp arch/${KARCH}/Makefile "${pkgdir}/usr/src/linux-${_kernver}/arch/${KARCH}/"
+  cp arch/${KARCH}/Makefile "${pkgdir}/usr/src/linux-${_kernver}/arch/${KARCH}/"
 
-	if [ "${CARCH}" = "i686" ]; then
-		cp arch/${KARCH}/Makefile_32.cpu "${pkgdir}/usr/src/linux-${_kernver}/arch/${KARCH}/"
-	fi
+  if [ "${CARCH}" = "i686" ]; then
+    cp arch/${KARCH}/Makefile_32.cpu "${pkgdir}/usr/src/linux-${_kernver}/arch/${KARCH}/"
+  fi
 
-	cp arch/${KARCH}/kernel/asm-offsets.s "${pkgdir}/usr/src/linux-${_kernver}/arch/${KARCH}/kernel/"
+  cp arch/${KARCH}/kernel/asm-offsets.s "${pkgdir}/usr/src/linux-${_kernver}/arch/${KARCH}/kernel/"
 
-	# add headers for lirc package
-	# pci
-	for i in bt8xx cx88 saa7134; do
-		mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/pci/${i}"
-		cp -a drivers/media/pci/${i}/*.h "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/pci/${i}"
-	done
-	# usb
-	for i in cpia2 em28xx pwc sn9c102; do
-		mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/usb/${i}"
-		cp -a drivers/media/usb/${i}/*.h "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/usb/${i}"
-	done
-	# i2c
-	mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/i2c"
-	cp drivers/media/i2c/*.h  "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/i2c/"
-	for i in cx25840; do
-		mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/i2c/${i}"
-		cp -a drivers/media/i2c/${i}/*.h "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/i2c/${i}"
-	done
+  # add headers for lirc package
+  # pci
+  for i in bt8xx cx88 saa7134; do
+    mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/pci/${i}"
+    cp -a drivers/media/pci/${i}/*.h "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/pci/${i}"
+  done
+  # usb
+  for i in cpia2 em28xx pwc sn9c102; do
+    mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/usb/${i}"
+    cp -a drivers/media/usb/${i}/*.h "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/usb/${i}"
+  done
+  # i2c
+  mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/i2c"
+  cp drivers/media/i2c/*.h  "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/i2c/"
+  for i in cx25840; do
+    mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/i2c/${i}"
+    cp -a drivers/media/i2c/${i}/*.h "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/i2c/${i}"
+  done
 
-	# add docbook makefile
-	install -D -m644 Documentation/DocBook/Makefile \
-		"${pkgdir}/usr/src/linux-${_kernver}/Documentation/DocBook/Makefile"
+  # add docbook makefile
+  install -D -m644 Documentation/DocBook/Makefile \
+    "${pkgdir}/usr/src/linux-${_kernver}/Documentation/DocBook/Makefile"
 
-	# add dm headers
-	mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/drivers/md"
-	cp drivers/md/*.h "${pkgdir}/usr/src/linux-${_kernver}/drivers/md"
+  # add dm headers
+  mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/drivers/md"
+  cp drivers/md/*.h "${pkgdir}/usr/src/linux-${_kernver}/drivers/md"
 
-	# add inotify.h
-	mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/include/linux"
-	cp include/linux/inotify.h "${pkgdir}/usr/src/linux-${_kernver}/include/linux/"
+  # add inotify.h
+  mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/include/linux"
+  cp include/linux/inotify.h "${pkgdir}/usr/src/linux-${_kernver}/include/linux/"
 
-	# add wireless headers
-	mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/net/mac80211/"
-	cp net/mac80211/*.h "${pkgdir}/usr/src/linux-${_kernver}/net/mac80211/"
+  # add wireless headers
+  mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/net/mac80211/"
+  cp net/mac80211/*.h "${pkgdir}/usr/src/linux-${_kernver}/net/mac80211/"
 
-	# add dvb headers for external modules
-	# in reference to:
-	# http://bugs.archlinux.org/task/9912
-	mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/dvb-core"
-	cp drivers/media/dvb-core/*.h "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/dvb-core/"
-	# and...
-	# http://bugs.archlinux.org/task/11194
-	mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/include/config/dvb/"
-	cp include/config/dvb/*.h "${pkgdir}/usr/src/linux-${_kernver}/include/config/dvb/"
-
-	# add dvb headers for http://mcentral.de/hg/~mrec/em28xx-new
+  # add dvb headers for external modules
   # in reference to:
-	# http://bugs.archlinux.org/task/13146
-	mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/dvb-frontends/"
-	cp drivers/media/dvb-frontends/lgdt330x.h "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/dvb-frontends/"
-	cp drivers/media/i2c/msp3400-driver.h "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/i2c/"
+  # http://bugs.archlinux.org/task/9912
+  mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/dvb-core"
+  cp drivers/media/dvb-core/*.h "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/dvb-core/"
+  # and...
+  # http://bugs.archlinux.org/task/11194
+  mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/include/config/dvb/"
+  cp include/config/dvb/*.h "${pkgdir}/usr/src/linux-${_kernver}/include/config/dvb/"
 
-	# add dvb headers
-	# in reference to:
-	# http://bugs.archlinux.org/task/20402
-	mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/usb/dvb-usb"
-	cp drivers/media/usb/dvb-usb/*.h "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/usb/dvb-usb/"
-	mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/dvb-frontends"
-	cp drivers/media/dvb-frontends/*.h "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/dvb-frontends/"
-	mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/tuners"
-	cp drivers/media/tuners/*.h "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/tuners/"
+  # add dvb headers for http://mcentral.de/hg/~mrec/em28xx-new
+  # in reference to:
+  # http://bugs.archlinux.org/task/13146
+  mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/dvb-frontends/"
+  cp drivers/media/dvb-frontends/lgdt330x.h "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/dvb-frontends/"
+  cp drivers/media/i2c/msp3400-driver.h "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/i2c/"
 
-	# add xfs and shmem for aufs building
-	mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/fs/xfs"
-	mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/mm"
-	cp fs/xfs/xfs_sb.h "${pkgdir}/usr/src/linux-${_kernver}/fs/xfs/xfs_sb.h"
+  # add dvb headers
+  # in reference to:
+  # http://bugs.archlinux.org/task/20402
+  mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/usb/dvb-usb"
+  cp drivers/media/usb/dvb-usb/*.h "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/usb/dvb-usb/"
+  mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/dvb-frontends"
+  cp drivers/media/dvb-frontends/*.h "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/dvb-frontends/"
+  mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/tuners"
+  cp drivers/media/tuners/*.h "${pkgdir}/usr/src/linux-${_kernver}/drivers/media/tuners/"
 
-	# copy in Kconfig files
-	for i in `find . -name "Kconfig*"`; do
-		mkdir -p "${pkgdir}"/usr/src/linux-${_kernver}/`echo ${i} | sed 's|/Kconfig.*||'`
-		cp ${i} "${pkgdir}/usr/src/linux-${_kernver}/${i}"
-	done
+  # add xfs and shmem for aufs building
+  mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/fs/xfs"
+  mkdir -p "${pkgdir}/usr/src/linux-${_kernver}/mm"
+  cp fs/xfs/xfs_sb.h "${pkgdir}/usr/src/linux-${_kernver}/fs/xfs/xfs_sb.h"
 
-	chown -R root.root "${pkgdir}/usr/src/linux-${_kernver}"
-	find "${pkgdir}/usr/src/linux-${_kernver}" -type d -exec chmod 755 {} \;
+  # copy in Kconfig files
+  for i in `find . -name "Kconfig*"`; do
+    mkdir -p "${pkgdir}"/usr/src/linux-${_kernver}/`echo ${i} | sed 's|/Kconfig.*||'`
+    cp ${i} "${pkgdir}/usr/src/linux-${_kernver}/${i}"
+  done
 
-	# strip scripts directory
-	find "${pkgdir}/usr/src/linux-${_kernver}/scripts" -type f -perm -u+w 2>/dev/null | while read binary ; do
-	case "$(file -bi "${binary}")" in
-		*application/x-sharedlib*) # Libraries (.so)
-			/usr/bin/strip ${STRIP_SHARED} "${binary}";;
-		*application/x-archive*) # Libraries (.a)
-			/usr/bin/strip ${STRIP_STATIC} "${binary}";;
-		*application/x-executable*) # Binaries
-			/usr/bin/strip ${STRIP_BINARIES} "${binary}";;
-	esac
-	done
+  chown -R root.root "${pkgdir}/usr/src/linux-${_kernver}"
+  find "${pkgdir}/usr/src/linux-${_kernver}" -type d -exec chmod 755 {} \;
 
-	# remove unneeded architectures
-	rm -rf "${pkgdir}"/usr/src/linux-${_kernver}/arch/{alpha,arc,arm,arm26,avr32,blackfin,c6x,cris,frv,h8300,hexagon,ia64,m32r,m68k,m68knommu,metag,mips,microblaze,mn10300,openrisc,parisc,powerpc,ppc,s390,score,sh,sh64,sparc,sparc64,tile,unicore32,um,v850,xtensa}
+  # strip scripts directory
+  find "${pkgdir}/usr/src/linux-${_kernver}/scripts" -type f -perm -u+w 2>/dev/null | while read binary ; do
+    case "$(file -bi "${binary}")" in
+      *application/x-sharedlib*) # Libraries (.so)
+        /usr/bin/strip ${STRIP_SHARED} "${binary}";;
+      *application/x-archive*) # Libraries (.a)
+        /usr/bin/strip ${STRIP_STATIC} "${binary}";;
+      *application/x-executable*) # Binaries
+        /usr/bin/strip ${STRIP_BINARIES} "${binary}";;
+    esac
+  done
+
+  # remove unneeded architectures
+  rm -rf "${pkgdir}"/usr/src/linux-${_kernver}/arch/{alpha,arc,arm,arm26,arm64,avr32,blackfin,c6x,cris,frv,h8300,hexagon,ia64,m32r,m68k,m68knommu,metag,mips,microblaze,mn10300,openrisc,parisc,powerpc,ppc,s390,score,sh,sh64,sparc,sparc64,tile,unicore32,um,v850,xtensa}
 }
 
-# Global pkgdesc and depends are here so that they will be picked up by AUR
-pkgdesc='Linux Kernel and modules with the ck1 patchset featuring the Brain Fuck Scheduler v0.430.'
+_package-docs() {
+  pkgdesc="Kernel hackers manual - HTML documentation that comes with the ${pkgbase/linux/Linux} kernel"
+  provides=("kernel26${_kernelname}-docs=${pkgver}")
+  conflicts=("kernel26${_kernelname}-docs")
+  replaces=("kernel26${_kernelname}-docs")
+
+  cd "${srcdir}/${_srcname}"
+
+  mkdir -p "${pkgdir}/usr/src/linux-${_kernver}"
+  cp -al Documentation "${pkgdir}/usr/src/linux-${_kernver}"
+  find "${pkgdir}" -type f -exec chmod 444 {} \;
+  find "${pkgdir}" -type d -exec chmod 755 {} \;
+
+  # remove a file already in linux package
+  rm -f "${pkgdir}/usr/src/linux-${_kernver}/Documentation/DocBook/Makefile"
+}
+
+pkgname=("${pkgbase}" "${pkgbase}-headers" "${pkgbase}-docs")
+for _p in ${pkgname[@]}; do
+  eval "package_${_p}() {
+    _package${_p#${pkgbase}}
+  }"
+done
+
+# vim:set ts=8 sts=2 sw=2 et:
