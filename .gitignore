@@ -1,3 +1,7 @@
 *.xz
 *.gz
 *.run
+pkg
+src
+*.old
+*.last
