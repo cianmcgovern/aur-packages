@@ -4,33 +4,35 @@
 
 #pkgbase=linux               # Build stock -ARCH kernel
 pkgbase=linux-custom       # Build kernel with a different name
-_srcname=linux-3.11
-pkgver=3.11
-_pkgver=3.11
+_srcname=linux-3.12
+pkgver=3.12.0
 pkgrel=1
 arch=('i686' 'x86_64')
 url="http://www.kernel.org/"
 license=('GPL2')
 makedepends=('xmlto' 'docbook-xsl' 'kmod' 'inetutils' 'bc')
 options=('!strip')
-source=("http://www.kernel.org/pub/linux/kernel/v3.x/${_srcname}.tar.xz"
+source=("https://www.kernel.org/pub/linux/kernel/v3.x/${_srcname}.tar.xz"
         # the main kernel config files
         'config' 'config.x86_64'
         # laptop config
-        'config-laptop-3.11'
+        'config-laptop-3.12'
         # standard config files for mkinitcpio ramdisk
         'linux.preset'
         'change-default-console-loglevel.patch'
         'criu-no-expert.patch'
-        "linux-${_pkgver}-custom.patch")
-md5sums=('fea363551ff45fbe4cb88497b863b261'
+        # GCC Patch
+        'http://repo-ck.com/source/gcc_patch/kernel-312-gcc48-1.patch.gz'
+        "linux-custom-${pkgver}.patch")
+md5sums=('cc6ee608854e0da4b64f6c1ff8b6398c'
          '007582f36e5386f66460dcd075e2c04c'
          'aa6a56c9cb67004ce47831e1e0f43ce6'
-         '5a3ff27546186135bfcf3528435a2341'
+         'd9d19cabef73feeac06478f295c82068'
          'eb14dcfd80c00852ef81ded6e826826a'
-         'ca3e3adbc8ea22ee57d9a82e07b7d035'
+         'f3def2cefdcbb954c21d8505d23cc83c'
          'd50c1ac47394e9aec637002ef3392bd1'
-         'f5bb8a6d85b1453ba7c78db634698860')
+         '46d23d5c38dea9916edb15c00fee9218'
+         '11f9b47e44868b7e9dc09d80533145b2')
 
 _kernelname=${pkgbase#linux}
 
@@ -57,7 +59,14 @@ prepare() {
   # patch from fedora
   patch -Np1 -i "${srcdir}/criu-no-expert.patch"
 
-  patch -Np1 -i "${srcdir}/${_srcname}-custom.patch"
+  # Upstream patch
+  #patch -Np1 -i "${srcdir}/patch-${pkgver}"
+
+  # Custom patch
+  patch -Np1 -i "${srcdir}/linux-custom-${pkgver}.patch"
+
+  # Patch source to enable morn gcc CPU optimizatons via the make nconfig
+  patch -Np1 -i "${srcdir}/kernel-312-gcc48-1.patch"
 
   if [ -n "$_use_current" ]; then
     if [[ -s /proc/config.gz ]]; then
@@ -92,6 +101,10 @@ prepare() {
 build() {
   cd "${srcdir}/${_srcname}"
 
+  if [[ `hostname` == "laptop" ]];
+  then
+    cat ${startdir}/config-laptop-3.12 > .config
+  fi
   # get kernel version
   make prepare
 
@@ -105,11 +118,6 @@ build() {
       fi
       msg "Running Steven Rostedt's make localmodconfig now"
       make localmodconfig
-  fi
-
-  if [[ `hostname` == "laptop" ]];
-  then
-    cat ${startdir}/config-laptop-3.11 > .config
   fi
 
   # load configuration
