@@ -5,7 +5,7 @@
 #pkgbase=linux               # Build stock -ARCH kernel
 pkgbase=linux-custom       # Build kernel with a different name
 _srcname=linux-3.12
-pkgver=3.12.0
+pkgver=3.12.1
 pkgrel=1
 arch=('i686' 'x86_64')
 url="http://www.kernel.org/"
@@ -13,10 +13,11 @@ license=('GPL2')
 makedepends=('xmlto' 'docbook-xsl' 'kmod' 'inetutils' 'bc')
 options=('!strip')
 source=("https://www.kernel.org/pub/linux/kernel/v3.x/${_srcname}.tar.xz"
+        "https://www.kernel.org/pub/linux/kernel/v3.x/patch-${pkgver}.xz"
         # the main kernel config files
         'config' 'config.x86_64'
         # laptop config
-        'config-laptop-3.12'
+        "config-laptop-${pkgver}"
         # standard config files for mkinitcpio ramdisk
         'linux.preset'
         'change-default-console-loglevel.patch'
@@ -25,11 +26,12 @@ source=("https://www.kernel.org/pub/linux/kernel/v3.x/${_srcname}.tar.xz"
         'http://repo-ck.com/source/gcc_patch/kernel-312-gcc48-1.patch.gz'
         "linux-custom-${pkgver}.patch")
 md5sums=('cc6ee608854e0da4b64f6c1ff8b6398c'
+         '5a8cb5a659baeeb6df3fe22de8d32df6'
          '007582f36e5386f66460dcd075e2c04c'
          'aa6a56c9cb67004ce47831e1e0f43ce6'
-         'd9d19cabef73feeac06478f295c82068'
+         'd20622906aa328afe6bf5d13feefcfda'
          'eb14dcfd80c00852ef81ded6e826826a'
-         'f3def2cefdcbb954c21d8505d23cc83c'
+         '98beb36f9b8cf16e58de2483ea9985e3'
          'd50c1ac47394e9aec637002ef3392bd1'
          '46d23d5c38dea9916edb15c00fee9218'
          '11f9b47e44868b7e9dc09d80533145b2')
@@ -37,7 +39,7 @@ md5sums=('cc6ee608854e0da4b64f6c1ff8b6398c'
 _kernelname=${pkgbase#linux}
 
 _localmodcfg=
-_use_current=
+_use_current=y
 
 # module.symbols md5sums
 # x86_64
@@ -54,13 +56,14 @@ prepare() {
   # set DEFAULT_CONSOLE_LOGLEVEL to 4 (same value as the 'quiet' kernel param)
   # remove this when a Kconfig knob is made available by upstream
   # (relevant patch sent upstream: https://lkml.org/lkml/2011/7/26/227)
+  patch -Np1 -i "${srcdir}/change-default-console-loglevel.patch"
 
   # allow criu without expert option set
   # patch from fedora
   patch -Np1 -i "${srcdir}/criu-no-expert.patch"
 
   # Upstream patch
-  #patch -Np1 -i "${srcdir}/patch-${pkgver}"
+  patch -Np1 -i "${srcdir}/patch-${pkgver}"
 
   # Custom patch
   patch -Np1 -i "${srcdir}/linux-custom-${pkgver}.patch"
@@ -80,11 +83,7 @@ prepare() {
     fi
   fi
 
-  if [ "${CARCH}" = "x86_64" ]; then
-    cat "${srcdir}/config.x86_64" > ./.config
-  else
-    cat "${srcdir}/config" > ./.config
-  fi
+  cat ${srcdir}/"config-laptop-${pkgver}" > ./.config
 
   if [ "${_kernelname}" != "" ]; then
     sed -i "s|CONFIG_LOCALVERSION=.*|CONFIG_LOCALVERSION=\"${_kernelname}\"|g" ./.config
