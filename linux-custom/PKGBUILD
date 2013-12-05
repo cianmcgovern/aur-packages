@@ -5,19 +5,20 @@
 #pkgbase=linux               # Build stock -ARCH kernel
 pkgbase=linux-custom       # Build kernel with a different name
 _srcname=linux-3.12
-pkgver=3.12.1
+_basever=3.12
+pkgver=3.12.3
 pkgrel=1
 arch=('i686' 'x86_64')
 url="http://www.kernel.org/"
 license=('GPL2')
-makedepends=('xmlto' 'docbook-xsl' 'kmod' 'inetutils' 'bc')
+makedepends=('xmlto' 'docbook-xsl' 'kmod' 'inetutils' 'bc' 'lzop')
 options=('!strip')
 source=("https://www.kernel.org/pub/linux/kernel/v3.x/${_srcname}.tar.xz"
         "https://www.kernel.org/pub/linux/kernel/v3.x/patch-${pkgver}.xz"
         # the main kernel config files
         'config' 'config.x86_64'
         # laptop config
-        "config-laptop-${pkgver}"
+        "config-laptop-${_basever}"
         # standard config files for mkinitcpio ramdisk
         'linux.preset'
         'change-default-console-loglevel.patch'
@@ -26,7 +27,7 @@ source=("https://www.kernel.org/pub/linux/kernel/v3.x/${_srcname}.tar.xz"
         'http://repo-ck.com/source/gcc_patch/kernel-312-gcc48-1.patch.gz'
         "linux-custom-${pkgver}.patch")
 md5sums=('cc6ee608854e0da4b64f6c1ff8b6398c'
-         '5a8cb5a659baeeb6df3fe22de8d32df6'
+         'b7a603bf67e69936cf049fc6b37d9085'
          '007582f36e5386f66460dcd075e2c04c'
          'aa6a56c9cb67004ce47831e1e0f43ce6'
          'd20622906aa328afe6bf5d13feefcfda'
@@ -34,7 +35,7 @@ md5sums=('cc6ee608854e0da4b64f6c1ff8b6398c'
          '98beb36f9b8cf16e58de2483ea9985e3'
          'd50c1ac47394e9aec637002ef3392bd1'
          '46d23d5c38dea9916edb15c00fee9218'
-         '11f9b47e44868b7e9dc09d80533145b2')
+         '0b985e584fcd19ece343c436099d2a5b')
 
 _kernelname=${pkgbase#linux}
 
@@ -83,7 +84,7 @@ prepare() {
     fi
   fi
 
-  cat ${srcdir}/"config-laptop-${pkgver}" > ./.config
+  cat ${srcdir}/"config-laptop-${_basever}" > ./.config
 
   if [ "${_kernelname}" != "" ]; then
     sed -i "s|CONFIG_LOCALVERSION=.*|CONFIG_LOCALVERSION=\"${_kernelname}\"|g" ./.config
@@ -122,7 +123,7 @@ build() {
   # load configuration
   # Configure the kernel. Replace the line below with one of your choice.
   #make menuconfig # CLI menu for configuration
-  make nconfig # new CLI menu for configuration
+  #make nconfig # new CLI menu for configuration
   #make xconfig # X-based configuration
   #make oldconfig # using old config from previous kernel version
   # ... or manually edit .config
