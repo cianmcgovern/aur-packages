@@ -6,7 +6,7 @@
 pkgbase=linux-custom       # Build kernel with a different name
 _srcname=linux-3.12
 _basever=3.12
-pkgver=3.12.3
+pkgver=3.12.4
 pkgrel=1
 arch=('i686' 'x86_64')
 url="http://www.kernel.org/"
@@ -27,7 +27,7 @@ source=("https://www.kernel.org/pub/linux/kernel/v3.x/${_srcname}.tar.xz"
         'http://repo-ck.com/source/gcc_patch/kernel-312-gcc48-1.patch.gz'
         "linux-custom-${pkgver}.patch")
 md5sums=('cc6ee608854e0da4b64f6c1ff8b6398c'
-         'b7a603bf67e69936cf049fc6b37d9085'
+         '511b5a2f0de55b5e91fd293766ce182b'
          '007582f36e5386f66460dcd075e2c04c'
          'aa6a56c9cb67004ce47831e1e0f43ce6'
          'd20622906aa328afe6bf5d13feefcfda'
@@ -35,7 +35,7 @@ md5sums=('cc6ee608854e0da4b64f6c1ff8b6398c'
          '98beb36f9b8cf16e58de2483ea9985e3'
          'd50c1ac47394e9aec637002ef3392bd1'
          '46d23d5c38dea9916edb15c00fee9218'
-         '0b985e584fcd19ece343c436099d2a5b')
+         '4d59c07a0f9c1fb9cafae6b89890b13e')
 
 _kernelname=${pkgbase#linux}
 

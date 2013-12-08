@@ -8751,7 +8751,7 @@ index 094f315..3880485 100644
  	help
  	  This option provides a kernel module that runs torture tests
 -- 
-1.8.4.2
+1.8.5.1
 
 
 From c3198caa5ac5a5ec157198ae0894ab4b19174c5b Mon Sep 17 00:00:00 2001
@@ -8969,5 +8969,5 @@ index 825df91..447f1b2 100644
  
  #if defined(CONFIG_SCHED_SMT) || defined(CONFIG_SCHED_MC)
 -- 
-1.8.4.2
+1.8.5.1
 
