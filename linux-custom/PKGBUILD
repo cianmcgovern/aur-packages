@@ -4,49 +4,54 @@
 
 #pkgbase=linux               # Build stock -ARCH kernel
 pkgbase=linux-custom       # Build kernel with a different name
-_srcname=linux-3.12
-_basever=3.12
-pkgver=3.12.4
+_srcname=linux-3.13
+_basever=3.13
+pkgver=3.13.3
 pkgrel=1
 arch=('i686' 'x86_64')
 url="http://www.kernel.org/"
 license=('GPL2')
 makedepends=('xmlto' 'docbook-xsl' 'kmod' 'inetutils' 'bc' 'lzop')
 options=('!strip')
-source=("https://www.kernel.org/pub/linux/kernel/v3.x/${_srcname}.tar.xz"
-        "https://www.kernel.org/pub/linux/kernel/v3.x/patch-${pkgver}.xz"
+source=("http://www.kernel.org/pub/linux/kernel/v3.x/${_srcname}.tar.xz"
+        "http://www.kernel.org/pub/linux/kernel/v3.x/patch-${pkgver}.xz"
         # the main kernel config files
         'config' 'config.x86_64'
-        # laptop config
-        "config-laptop-${_basever}"
         # standard config files for mkinitcpio ramdisk
         'linux.preset'
         'change-default-console-loglevel.patch'
         'criu-no-expert.patch'
-        # GCC Patch
-        'http://repo-ck.com/source/gcc_patch/kernel-312-gcc48-1.patch.gz'
-        "linux-custom-${pkgver}.patch")
-md5sums=('cc6ee608854e0da4b64f6c1ff8b6398c'
-         '511b5a2f0de55b5e91fd293766ce182b'
-         '007582f36e5386f66460dcd075e2c04c'
-         'aa6a56c9cb67004ce47831e1e0f43ce6'
-         'd20622906aa328afe6bf5d13feefcfda'
+        '0001-sunrpc-create-a-new-dummy-pipe-for-gssd-to-hold-open.patch'
+        '0002-sunrpc-replace-sunrpc_net-gssd_running-flag-with-a-m.patch'
+        '0003-nfs-check-if-gssd-is-running-before-attempting-to-us.patch'
+        '0004-rpc_pipe-remove-the-clntXX-dir-if-creating-the-pipe-.patch'
+        '0005-sunrpc-add-an-info-file-for-the-dummy-gssd-pipe.patch'
+        '0006-rpc_pipe-fix-cleanup-of-dummy-gssd-directory-when-no.patch'
+        '0001-syscalls.h-use-gcc-alias-instead-of-assembler-aliase.patch'
+        '0001-quirk-asm_volatile_goto.patch'
+        'i8042-fix-aliases.patch'
+        )
+md5sums=('0ecbaf65c00374eb4a826c2f9f37606f'
+         '2d3d298f2b430122f4baf2af88277231'
+         'ba4468d313adfaf22368add7f58204aa'
+         '26de60b560e45b57d6daca1a29adedac'
          'eb14dcfd80c00852ef81ded6e826826a'
          '98beb36f9b8cf16e58de2483ea9985e3'
          'd50c1ac47394e9aec637002ef3392bd1'
-         '46d23d5c38dea9916edb15c00fee9218'
-         '4d59c07a0f9c1fb9cafae6b89890b13e')
+         'dd2adb99cd3feed6f11022562901965c'
+         'b00cc399d3797cb0793e18b5bf387a50'
+         '7cbd2349cdf046acc37b652c06ba36be'
+         '10dbaf863e22b2437e68f9190d65c861'
+         'd5907a721b97299f0685c583499f7820'
+         'a724515b350b29c53f20e631c6cf9a14'
+         'e6fa278c092ad83780e2dd0568e24ca6'
+         '6baa312bc166681f48e972824f3f6649'
+         '93dbf73af819b77f03453a9c6de2bb47')
 
 _kernelname=${pkgbase#linux}
 
 _localmodcfg=
-_use_current=y
-
-# module.symbols md5sums
-# x86_64
-# 8eff46fa6e5604112ea3d0d0848c0005  /lib/modules/3.10.8-1-ARCH/modules.symbols
-# i686
-# bba2399c1ae0183280c52dffe95f77a2  /lib/modules/3.10.8-1-ARCH/modules.symbols
+_use_current=
 
 prepare() {
   cd "${srcdir}/${_srcname}"
@@ -66,25 +71,39 @@ prepare() {
   # Upstream patch
   patch -Np1 -i "${srcdir}/patch-${pkgver}"
 
+  # fix 15 seocnds nfs delay
+  # http://git.linux-nfs.org/?p=trondmy/linux-nfs.git;a=commitdiff;h=4b9a445e3eeb8bd9278b1ae51c1b3a651e370cd6
+  patch -p1 -i "${srcdir}/0001-sunrpc-create-a-new-dummy-pipe-for-gssd-to-hold-open.patch"
+  # http://git.linux-nfs.org/?p=trondmy/linux-nfs.git;a=commitdiff;h=89f842435c630f8426f414e6030bc2ffea0d6f81
+  patch -p1 -i "${srcdir}/0002-sunrpc-replace-sunrpc_net-gssd_running-flag-with-a-m.patch"
+  # http://git.linux-nfs.org/?p=trondmy/linux-nfs.git;a=commitdiff;h=6aa23d76a7b549521a03b63b6d5b7880ea87eab7
+  patch -p1 -i "${srcdir}/0003-nfs-check-if-gssd-is-running-before-attempting-to-us.patch"
+
+  # fix nfs kernel oops
+  # http://git.linux-nfs.org/?p=trondmy/linux-nfs.git;a=commitdiff;h=3396f92f8be606ea485b0a82d4e7749a448b013b
+  patch -p1 -i "${srcdir}/0004-rpc_pipe-remove-the-clntXX-dir-if-creating-the-pipe-.patch"
+  # http://git.linux-nfs.org/?p=trondmy/linux-nfs.git;a=commitdiff;h=e2f0c83a9de331d9352185ca3642616c13127539
+  patch -p1 -i "${srcdir}/0005-sunrpc-add-an-info-file-for-the-dummy-gssd-pipe.patch"
+  # http://git.linux-nfs.org/?p=trondmy/linux-nfs.git;a=commitdiff;h=23e66ba97127ff3b064d4c6c5138aa34eafc492f
+  patch -p1 -i "${srcdir}/0006-rpc_pipe-fix-cleanup-of-dummy-gssd-directory-when-no.patch"
+
+  # Fix symbols: Revert http://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=83460ec8dcac14142e7860a01fa59c267ac4657c
+  patch -Rp1 -i "${srcdir}/0001-syscalls.h-use-gcc-alias-instead-of-assembler-aliase.patch"
+
+  # Fix i8042 aliases
+  patch -p1 -i "${srcdir}/i8042-fix-aliases.patch"
+  # Fix compile issues
+  # http://git.kernel.org/cgit/linux/kernel/git/tip/tip.git/patch/?id=a9f180345f5378ac87d80ed0bea55ba421d83859
+  patch -Np1 -i "${srcdir}/0001-quirk-asm_volatile_goto.patch"
+
   # Custom patch
-  patch -Np1 -i "${srcdir}/linux-custom-${pkgver}.patch"
+  #patch -Np1 -i "${srcdir}/linux-custom-${pkgver}.patch"
 
-  # Patch source to enable morn gcc CPU optimizatons via the make nconfig
-  patch -Np1 -i "${srcdir}/kernel-312-gcc48-1.patch"
-
-  if [ -n "$_use_current" ]; then
-    if [[ -s /proc/config.gz ]]; then
-        msg "Extracting config from /proc/config.gz..."
-        # modprobe configs
-        zcat /proc/config.gz > ./.config
-    else
-        warning "You kernel was not compiled with IKCONFIG_PROC!"
-        warning "You cannot read the current config!"                                  warning "Aborting!"
-        exit
-    fi
+  if [ "${CARCH}" = "x86_64" ]; then
+    cat "${srcdir}/config.x86_64" > ./.config
+  else
+    cat "${srcdir}/config" > ./.config
   fi
-
-  cat ${srcdir}/"config-laptop-${_basever}" > ./.config
 
   if [ "${_kernelname}" != "" ]; then
     sed -i "s|CONFIG_LOCALVERSION=.*|CONFIG_LOCALVERSION=\"${_kernelname}\"|g" ./.config
@@ -96,29 +115,9 @@ prepare() {
 
   # don't run depmod on 'make install'. We'll do this ourselves in packaging
   sed -i '2iexit 0' scripts/depmod.sh
-}
 
-build() {
-  cd "${srcdir}/${_srcname}"
-
-  if [[ `hostname` == "laptop" ]];
-  then
-    cat ${startdir}/config-laptop-3.12 > .config
-  fi
   # get kernel version
   make prepare
-
-  ### Optionally load needed modules for the make localmodconfig
-  # See http://aur.archlinux.org/packages.php?ID=41689
-  if [ -n "$_localmodcfg" ]; then
-      msg "If you have modprobe_db installed, running it in recall mode now"
-      if [ -e /usr/bin/modprobed_db ]; then
-          [[ ! -x /usr/bin/sudo ]] && echo "Cannot call modprobe with sudo.  Install via pacman -S sudo and configure to work with this user." && exit 1
-          sudo /usr/bin/modprobed_db recall
-      fi
-      msg "Running Steven Rostedt's make localmodconfig now"
-      make localmodconfig
-  fi
 
   # load configuration
   # Configure the kernel. Replace the line below with one of your choice.
@@ -130,21 +129,11 @@ build() {
 
   # rewrite configuration
   yes "" | make config >/dev/null
+}
 
-  # save configuration for later reuse
-  if [ "${CARCH}" = "x86_64" ]; then
-    cat .config > "${startdir}/config.x86_64.last"
-  else
-    cat .config > "${startdir}/config.last"
-  fi
+build() {
+  cd "${srcdir}/${_srcname}"
 
-  ####################
-  # stop here
-  # this is useful to configure the kernel
-  #msg "Stopping build"; return 1
-  ####################
-
-  # build!
   make ${MAKEFLAGS} LOCALVERSION= bzImage modules
 }
 
