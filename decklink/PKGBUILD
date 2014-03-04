@@ -1,0 +1,56 @@
+# Maintainer: Antoine Lubineau <antoine@lubignon.info>
+
+pkgname=decklink
+_basever=10.0
+_mever=3.3
+pkgver=${_basever}a1
+pkgrel=1
+pkgdesc="Drivers for Blackmagic Design DeckLink, Intensity or Multibridge video editing cards"
+arch=('i686' 'x86_64')
+url="http://www.blackmagic-design.com/products/"
+license=('custom')
+depends=('linux-headers' 'libxml2' 'mesa' 'qt4' 'libpng12')
+options=('!strip')
+install='decklink.install'
+source=("http://software.blackmagicdesign.com/DesktopVideo/Blackmagic_Desktop_Video_Linux_${_basever}.tar.gz"
+        'decklink.conf')
+sha256sums=('7bdcb8369b11c9e01952df8a916789d5132d7c688c47c2add32f74608aff9634'
+            '49c6f841e7f0d663bc426552159eba1610f880259db9fee6f2e2bf62988358b7')
+
+package() {
+  # license
+  mkdir -p "$pkgdir/usr/share/licenses/$pkgname"
+  ln -s /usr/share/doc/desktopvideo/License.txt "$pkgdir/usr/share/licenses/$pkgname/COPYING"
+
+  # automatic module loading
+  install -D -m 644 decklink.conf "$pkgdir/etc/modules-load.d/decklink.conf"
+
+  cd "$srcdir"
+  [ "$CARCH" = "i686" ] && _arch='i386' && _debarch='i386'
+  [ "$CARCH" = "x86_64" ] && _arch='x86_64' && _debarch='amd64'
+
+  # Driver
+  pushd "DesktopVideo_${_basever}/other/${CARCH}"
+  tar xf "desktopvideo-${_basever}a7-${_arch}.tar.gz"
+  cd "desktopvideo-${_basever}a7-${CARCH}/usr/src/blackmagic-${_basever}a7"
+  make
+  install -D -m 0644 blackmagic.ko "${pkgdir}/usr/lib/modules/extramodules-3.13-ARCH/blackmagic.ko"
+  make clean
+  cd -
+  cd "desktopvideo-${_basever}a7-${CARCH}/usr/src/blackmagic-io-${_basever}a7"
+  make
+  install -D -m 0644 blackmagic-io.ko "${pkgdir}/usr/lib/modules/extramodules-3.13-ARCH/blackmagic-io.ko"
+  make clean
+  cd -
+  cp -a "desktopvideo-${_basever}a7-${CARCH}/etc" "${pkgdir}"
+  cp -a "desktopvideo-${_basever}a7-${CARCH}/usr" "${pkgdir}"
+  popd
+
+  # MediaExpress
+  pushd "MediaExpress_${_mever}/other/${CARCH}"
+  tar zxf "mediaexpress-${_mever}a1-${CARCH}.tar.gz"
+  cp -a "mediaexpress-${_mever}a1-${CARCH}/usr" "${pkgdir}"
+  popd
+}
+
+# vim:set ts=2 sw=2 et:
