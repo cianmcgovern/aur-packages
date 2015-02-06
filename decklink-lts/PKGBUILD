@@ -1,41 +1,44 @@
-# Contributor Cian Mc Govern <cian@cianmcgovern.com>
-# Maintainer: Antoine Lubineau <antoine@lubignon.info>
+# Contributor: Antoine Lubineau <antoine@lubignon.info>
+# Maintainer: Cian Mc Govern <cian@cianmcgovern.com>
 
-pkgname=decklink
-_basever=10.0
-_mever=3.3
-pkgver=${_basever}a1
+pkgname=decklink-lts
+pkgver=10.3.5
 pkgrel=1
 pkgdesc="Drivers for Blackmagic Design DeckLink, Intensity or Multibridge video editing cards"
 arch=('i686' 'x86_64')
-url="http://www.blackmagic-design.com/products/"
+url="https://www.blackmagicdesign.com/"
 license=('custom')
-depends=('linux-headers' 'libxml2' 'mesa' 'qt4' 'libpng12')
+depends=('libxml2' 'mesa' 'qt4' 'libpng')
+makedepends=('linux-lts-headers')
+conflicts=('decklink')
 options=('!strip')
-install='decklink.install'
-source=("http://software.blackmagicdesign.com/DesktopVideo/Blackmagic_Desktop_Video_Linux_${_basever}.tar.gz"
+install='decklink-lts.install'
+source=("http://software.blackmagicdesign.com/DesktopVideo/Blackmagic_Desktop_Video_Linux_${pkgver}.tar.gz"
         'decklink.conf')
-md5sums=('2eef4fb0d62e9788d40adcf90838b1b8'
+md5sums=('8c88a6374695a418007027df0c2680db'
          '4f2033439305c4ce8e9d50f55d5c46d8')
 
+_mever=3.3.2
+_dva=5
+_mea=3
+_dv="desktopvideo-${pkgver}a${_dva}-${CARCH}"
+_me="mediaexpress-${_mever}a${_mea}-${CARCH}"
+_kernver=3.14
+
 prepare() {
-  _dv="DesktopVideo_${_basever}/other/${CARCH}"
-  _me="MediaExpress_${_mever}/other/${CARCH}"
-  [ "$CARCH" = "i686" ] && _arch='i386' && _debarch='i386'
-  [ "$CARCH" = "x86_64" ] && _arch='x86_64' && _debarch='amd64'
-  tar zxf "${srcdir}/${_dv}/desktopvideo-${_basever}a7-${_arch}.tar.gz"
-  tar zxf "${srcdir}/${_me}/mediaexpress-${_mever}a1-${CARCH}.tar.gz"
+  tar zxf "${srcdir}/DesktopVideo_${pkgver}/other/${CARCH}/${_dv}.tar.gz"
+  tar zxf "${srcdir}/MediaExpress_${_mever}/other/${CARCH}/${_me}.tar.gz"
 }
 
 build() {
-  cd "${srcdir}/desktopvideo-${_basever}a7-${CARCH}/usr/src/blackmagic-${_basever}a7"
+  cd "${srcdir}/${_dv}/usr/src/blackmagic-${pkgver}a${_dva}"
   make
-  cp -dpr --no-preserve=ownership "${srcdir}/desktopvideo-${_basever}a7-${CARCH}/usr/src/blackmagic-${_basever}a7/blackmagic.ko" "${srcdir}"
+  cp -dpr --no-preserve=ownership "${srcdir}/${_dv}/usr/src/blackmagic-${pkgver}a${_dva}/blackmagic.ko" "${srcdir}"
   make clean
 
-  cd "${srcdir}/desktopvideo-${_basever}a7-${CARCH}/usr/src/blackmagic-io-${_basever}a7"
+  cd "${srcdir}/${_dv}/usr/src/blackmagic-io-${pkgver}a${_dva}"
   make
-  cp -dpr --no-preserve=ownership "${srcdir}/desktopvideo-${_basever}a7-${CARCH}/usr/src/blackmagic-io-${_basever}a7/blackmagic-io.ko" "${srcdir}"
+  cp -dpr --no-preserve=ownership "${srcdir}/${_dv}/usr/src/blackmagic-io-${pkgver}a${_dva}/blackmagic-io.ko" "${srcdir}"
   make clean
 }
 
@@ -45,14 +48,16 @@ package() {
   ln -s /usr/share/doc/desktopvideo/License.txt "$pkgdir/usr/share/licenses/$pkgname/COPYING"
 
   # automatic module loading
-  install -D -m 0644 "${srcdir}/decklink.conf" "$pkgdir/etc/modules-load.d/decklink.conf"
-  install -D -m 0644 "${srcdir}/blackmagic.ko" "${pkgdir}/usr/lib/modules/extramodules-3.13-ARCH/blackmagic.ko"
-  install -D -m 0644 "${srcdir}/blackmagic-io.ko" "${pkgdir}/usr/lib/modules/extramodules-3.13-ARCH/blackmagic-io.ko"
+  install -D -m 0644 "${srcdir}/decklink.conf" "${pkgdir}/etc/modules-load.d/decklink.conf"
+  install -D -m 0644 "${srcdir}/blackmagic.ko" "${pkgdir}/usr/lib/modules/extramodules-${_kernver}-lts/blackmagic.ko"
+  install -D -m 0644 "${srcdir}/blackmagic-io.ko" "${pkgdir}/usr/lib/modules/extramodules-${_kernver}-lts/blackmagic-io.ko"
 
-  cp -dpr --no-preserve=ownership "${srcdir}/desktopvideo-${_basever}a7-${CARCH}/etc" "${pkgdir}"
-  cp -dpr --no-preserve=ownership "${srcdir}/desktopvideo-${_basever}a7-${CARCH}/usr" "${pkgdir}"
+  cp -dpr --no-preserve=ownership "${srcdir}/${_dv}/etc" "${pkgdir}"
+  cp -dpr --no-preserve=ownership "${srcdir}/${_dv}/usr" "${pkgdir}"
+  mv "${pkgdir}/usr/sbin/DesktopVideoHelper" "${pkgdir}/usr/bin/"
+  rm -r "${pkgdir}/usr/sbin/"
 
-  cp -dpr --no-preserve=ownership "${srcdir}/mediaexpress-${_mever}a1-${CARCH}/usr" "${pkgdir}"
+  cp -dpr --no-preserve=ownership "${srcdir}/${_me}/usr" "${pkgdir}"
 }
 
 # vim:set ts=2 sw=2 et:
